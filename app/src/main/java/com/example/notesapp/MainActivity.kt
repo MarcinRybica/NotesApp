@@ -26,14 +26,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.notesapp.ui.theme.NotesAppTheme
 import androidx.compose.runtime.getValue
@@ -43,32 +40,80 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import com.example.notesapp.model.Note
+import io.realm.kotlin.Realm
+import io.realm.kotlin.RealmConfiguration
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.lifecycleScope
+import com.example.notesapp.model.NoteItem
+import com.example.notesapp.ui.card.NoteCard
+import io.realm.kotlin.ext.query
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private lateinit var realm: Realm
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        enableEdgeToEdge()
+
+        val config = RealmConfiguration.Builder(schema = setOf(Note::class))
+            .name("notes.realm")
+            .build()
+        realm = Realm.open(config)
+
         enableEdgeToEdge()
         setContent {
             NotesAppTheme {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    containerColor = Color(0xFF000000)
-                ) { innerPadding ->
-                    NotesMain()
+                NotesMain(realm)
+            }
+        }
+
+        lifecycleScope.launch{
+            val config = RealmConfiguration.Builder(schema = setOf(Note::class))
+                .name("notes.realm")
+                .build()
+            realm = Realm.open(config)
+
+            setContent {
+                NotesAppTheme {
+                    NotesMain(realm)
                 }
             }
         }
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        realm.close()
+    }
 }
 
 @Composable
-fun NotesMain(modifier: Modifier = Modifier) {
+fun LoadingScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("Loading database...", color = Color.White)
+    }
+}
+
+@Composable
+fun NotesMain(realm: Realm, modifier: Modifier = Modifier) {
     var text by remember{ mutableStateOf("") }
     var searchByButtonText by remember { mutableStateOf("Search by: TITLE") }
     val context = LocalContext.current
 
-    Column(
+    val notesFlow = realm.query<Note>().asFlow()
+    val notesState = notesFlow.collectAsState(initial = null)
+    val notes = notesState.value?.list?: emptyList()
 
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF000000))
     ) {
         Row(
             modifier = Modifier.fillMaxWidth()
@@ -158,7 +203,13 @@ fun NotesMain(modifier: Modifier = Modifier) {
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-
+                items(notes.size) { index ->
+                    val note = notes[index]
+                    NoteCard(
+                        note = NoteItem(note.title, note.content),
+                        onClick = {}
+                    )
+                }
             }
 
             Button(
@@ -182,10 +233,34 @@ fun NotesMain(modifier: Modifier = Modifier) {
     }
 }
 
+@Composable
+fun NotesMainPreview(){
+    NotesMainFake()
+}
+
+@Composable
+fun NotesMainFake(){
+    val fakeNotes = listOf(
+        NoteItem("Title 1", "Content 1"),
+        NoteItem("Title 2", "Content 2"),
+    )
+
+    Column(modifier = Modifier.background(Color.Black)) {
+        LazyColumn() {
+            items(fakeNotes.size) { index ->
+                NoteCard(
+                    note = fakeNotes[index],
+                    onClick = {}
+                )
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewInput(){
     NotesAppTheme {
-        NotesMain()
+        NotesMainFake()
     }
 }
