@@ -1,5 +1,6 @@
 package com.example.notesapp
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Space
 import androidx.activity.ComponentActivity
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,6 +64,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun NotesMain(modifier: Modifier = Modifier) {
     var text by remember{ mutableStateOf("") }
+    var searchByButtonText by remember { mutableStateOf("Search by: TITLE") }
+    val context = LocalContext.current
 
     Column(
 
@@ -116,7 +120,13 @@ fun NotesMain(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.width(16.dp))
 
             Button(
-                onClick = { /*TODO*/ },
+                onClick = {
+                    if(searchByButtonText == "Search by: TITLE"){
+                        searchByButtonText = "Search by: TAGS"
+                    } else {
+                        searchByButtonText = "Search by: TITLE"
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
@@ -124,7 +134,7 @@ fun NotesMain(modifier: Modifier = Modifier) {
                     containerColor = Color(0xFFFF7700)),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Search by: TITLE",
+                Text(searchByButtonText,
                     color = Color.White)
             }
         }
@@ -152,7 +162,9 @@ fun NotesMain(modifier: Modifier = Modifier) {
             }
 
             Button(
-                onClick = { /*TODO*/ },
+                onClick = {
+                    context.startActivity(Intent(context, NoteActivity::class.java))
+                },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .height(96.dp)
