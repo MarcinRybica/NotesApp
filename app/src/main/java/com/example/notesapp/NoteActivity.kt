@@ -1,6 +1,7 @@
 package com.example.notesapp
 
 import android.R.attr.text
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -38,11 +39,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.notesapp.viewmodel.NoteViewModel
 
 class NoteActivity : ComponentActivity() {
+    private val viewModel = NoteViewModel()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -52,7 +57,7 @@ class NoteActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     containerColor = Color(0xFF000000)
                 ) { innerPadding ->
-                    NoteScreen()
+                    NoteScreen(viewModel = viewModel)
                 }
             }
         }
@@ -60,9 +65,10 @@ class NoteActivity : ComponentActivity() {
 }
 
 @Composable
-fun NoteScreen(modifier: Modifier = Modifier) {
+fun NoteScreen(modifier: Modifier = Modifier, viewModel: NoteViewModel) {
     var title by remember { mutableStateOf("") }
     var text by remember{ mutableStateOf("") }
+    val context = LocalContext.current
 
     Column() {
         Row(
@@ -73,7 +79,12 @@ fun NoteScreen(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
-                onClick = { },
+                onClick = {
+                    context.startActivity(Intent(context, MainActivity::class.java))
+                    viewModel.addNote(title, text)
+                    title = ""
+                    text = ""
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent
                 ),
