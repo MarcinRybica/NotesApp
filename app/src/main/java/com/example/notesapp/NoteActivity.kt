@@ -28,6 +28,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,26 +39,40 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import com.example.notesapp.model.Note
 import com.example.notesapp.viewmodel.NoteViewModel
+import io.realm.kotlin.Realm
+import io.realm.kotlin.RealmConfiguration
+import io.realm.kotlin.ext.query
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class NoteActivity : ComponentActivity() {
-    private val viewModel = NoteViewModel()
+    private lateinit var realm: Realm
+    private var currentNote: Note? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val config = RealmConfiguration.Builder(schema = setOf(Note::class))
+            .name("notes.realm")
+            .build()
+        realm = Realm.open(config)
+
+        val noteIdHex = intent.getStringExtra("noteId")
+        if(!noteIdHex.isNullOrEmpty()) {
+            val objectId = org.mongodb.kbson.ObjectId(hexString = noteIdHex)
+            currentNote = realm.query<Note>("_id == $0", objectId).first().find()
+        }
 
         setContent{
             NotesAppTheme() {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     containerColor = Color(0xFF000000)
-                ) { innerPadding ->
-                    NoteScreen(viewModel = viewModel)
+                ) {
+                    NoteScreen(currentNote, realm, viewModel = androidx.lifecycle.viewmodel.compose.viewModel())
                 }
             }
         }
@@ -65,9 +80,12 @@ class NoteActivity : ComponentActivity() {
 }
 
 @Composable
-fun NoteScreen(modifier: Modifier = Modifier, viewModel: NoteViewModel) {
-    var title by remember { mutableStateOf("") }
-    var text by remember{ mutableStateOf("") }
+fun NoteScreen(note: Note?,
+               realm: Realm,
+               viewModel: NoteViewModel = viewModel())
+{
+    var title by remember(note) { mutableStateOf(note?.title ?: "") }
+    var text by remember(note) { mutableStateOf(note?.content ?: "") }
     val context = LocalContext.current
 
     Column() {
@@ -80,10 +98,12 @@ fun NoteScreen(modifier: Modifier = Modifier, viewModel: NoteViewModel) {
         ) {
             Button(
                 onClick = {
+                    if (note != null) {
+                        viewModel.editNote(note, title, text)
+                    } else {
+                        viewModel.addNote(title, text)
+                    }
                     context.startActivity(Intent(context, MainActivity::class.java))
-                    viewModel.addNote(title, text)
-                    title = ""
-                    text = ""
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent
@@ -101,7 +121,14 @@ fun NoteScreen(modifier: Modifier = Modifier, viewModel: NoteViewModel) {
             )
 
             Button(
-                onClick = { },
+                onClick = {
+                    note?.let{
+                        realm.writeBlocking{
+                            delete(it)
+                        }
+                        context.startActivity(Intent(context, MainActivity::class.java))
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent
                 ),

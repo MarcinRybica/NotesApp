@@ -21,4 +21,23 @@ class NoteRepository {
             })
         }
     }
+
+    fun deleteNote(note: Note) {
+        realm.writeBlocking {
+            findLatest(note)?.let {
+                delete(it)
+            }
+        }
+    }
+
+    fun editNote(note: Note, title: String, content: String) {
+        realm.writeBlocking {
+            findLatest(note)?.apply {
+                this.title = title
+                this.content = content
+                this.updatedAt = System.currentTimeMillis()
+            }
+        }
+    }
+
 }

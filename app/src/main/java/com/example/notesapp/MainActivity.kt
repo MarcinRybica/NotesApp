@@ -207,7 +207,11 @@ fun NotesMain(realm: Realm, modifier: Modifier = Modifier) {
                     val note = notes[index]
                     NoteCard(
                         note = NoteItem(note.title, note.content),
-                        onClick = {}
+                        onClick = {
+                            val intent = Intent(context, NoteActivity::class.java)
+                            intent.putExtra("noteId", note._id.toHexString())
+                            context.startActivity(intent)
+                        }
                     )
                 }
             }

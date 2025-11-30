@@ -4,6 +4,7 @@ import android.R.attr.background
 import android.R.id.background
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +23,7 @@ import com.example.notesapp.model.NoteItem
 
 @Composable
 fun NoteCard(note: NoteItem, onClick: () -> Unit){
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -33,6 +35,7 @@ fun NoteCard(note: NoteItem, onClick: () -> Unit){
                 RoundedCornerShape(16.dp)
             )
             .background(Color(0xFF333333))
+            .clickable { onClick() }
     ) {
         Column(
 
