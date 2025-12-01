@@ -3,6 +3,8 @@ package com.example.notesapp.repositories
 import com.example.notesapp.model.Note
 import io.realm.kotlin.Realm
 import io.realm.kotlin.RealmConfiguration
+import io.realm.kotlin.ext.query
+import org.mongodb.kbson.ObjectId
 
 class NoteRepository {
     private val realm: Realm by lazy{
@@ -22,11 +24,10 @@ class NoteRepository {
         }
     }
 
-    fun deleteNote(note: Note) {
+    fun deleteNoteById(id: ObjectId) {
         realm.writeBlocking {
-            findLatest(note)?.let {
-                delete(it)
-            }
+            val note = query<Note>("_id == $0", id).first().find()
+            note?.let { delete(it) }
         }
     }
 

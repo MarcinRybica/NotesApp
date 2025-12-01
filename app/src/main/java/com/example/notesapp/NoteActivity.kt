@@ -72,7 +72,7 @@ class NoteActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     containerColor = Color(0xFF000000)
                 ) {
-                    NoteScreen(currentNote, realm, viewModel = androidx.lifecycle.viewmodel.compose.viewModel())
+                    NoteScreen(currentNote, viewModel = viewModel())
                 }
             }
         }
@@ -81,7 +81,6 @@ class NoteActivity : ComponentActivity() {
 
 @Composable
 fun NoteScreen(note: Note?,
-               realm: Realm,
                viewModel: NoteViewModel = viewModel())
 {
     var title by remember(note) { mutableStateOf(note?.title ?: "") }
@@ -122,10 +121,8 @@ fun NoteScreen(note: Note?,
 
             Button(
                 onClick = {
-                    note?.let{
-                        realm.writeBlocking{
-                            delete(it)
-                        }
+                    note?.let {
+                        viewModel.deleteNoteById(it._id )
                         context.startActivity(Intent(context, MainActivity::class.java))
                     }
                 },
