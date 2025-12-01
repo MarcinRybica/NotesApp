@@ -108,7 +108,16 @@ fun NotesMain(realm: Realm, modifier: Modifier = Modifier) {
 
     val notesFlow = realm.query<Note>().asFlow()
     val notesState = notesFlow.collectAsState(initial = null)
-    val notes = notesState.value?.list?: emptyList()
+
+    val allNotes = notesState.value?.list ?: emptyList()
+
+    val notes = if(text.isBlank()) {
+        allNotes
+    } else {
+        allNotes.filter { note ->
+            note.title.contains(text, ignoreCase = true)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -183,8 +192,6 @@ fun NotesMain(realm: Realm, modifier: Modifier = Modifier) {
                     color = Color.White)
             }
         }
-
-
 
         Box(
             modifier = modifier
